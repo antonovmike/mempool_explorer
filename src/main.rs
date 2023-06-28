@@ -35,17 +35,14 @@ fn main() -> Result<(), MyError> {
         [],
     )?;
 
-    connection.execute(
-        "INSERT INTO people VALUES (0, 'Alice', 42);
-        INSERT INTO people VALUES (1, 'Mary', 69);
-        INSERT INTO people VALUES (2, 'Marat', 45);",
-        [],
-    )?;
+    connection.execute("INSERT INTO people VALUES (0, 'Alice', 42);", [])?;
+    connection.execute("INSERT INTO people VALUES (1, 'Mary', 69);", [])?;
+    connection.execute("INSERT INTO people VALUES (2, 'Marat', 45);", [])?;
 
     let mut last_id = 0;
 
     loop {
-        let mut stmt = connection.prepare("SELECT * FROM people WHERE age > ?")?;
+        let mut stmt = connection.prepare("SELECT * FROM people WHERE id > ?")?;
         let rows = stmt.query_map([&last_id], |row| {
             Ok(Record {
                 id: row.get(0)?,
