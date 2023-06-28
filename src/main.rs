@@ -19,48 +19,52 @@ enum MyError {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Record {
-   id: i32,
-   name: String,
-   age: i32,
+    id: i32,
+    name: String,
+    age: i32,
 }
 
 fn main() -> Result<(), MyError> {
-   let connection = Connection::open("test.db")?;
-   connection.execute(
-       "CREATE TABLE IF NOT EXISTS people (
+    let connection = Connection::open("add/test.db")?;
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS people (
                  id              INTEGER PRIMARY KEY,
                  name            TEXT NOT NULL,
                  age             INTEGER NOT NULL
                  );",
-       [],
-   )?;
-   connection.execute(
-       "INSERT INTO people VALUES (0, 'Alice', 42);
-        INSERT INTO people VALUES (1, 'Mary', 69);",
-       [],
-   )?;
+        [],
+    )?;
 
-   let mut last_id = 0;
+    connection.execute(
+        "INSERT INTO people VALUES (0, 'Alice', 42);
+        INSERT INTO people VALUES (1, 'Mary', 69);
+        INSERT INTO people VALUES (2, 'Marat', 45);",
+        [],
+    )?;
 
-   loop {
-       let mut stmt = connection.prepare("SELECT * FROM people WHERE age > ?")?;
-       let rows = stmt.query_map([&last_id], |row| {
-           Ok(Record {
-               id: row.get(0)?,
-               name: row.get(1)?,
-               age: row.get(2)?,
-           })
-       })?;
+    let mut last_id = 0;
 
-       let mut file = File::create("output.json")?;
-       for row in rows {
-           let record = row?;
-           let serialized = serde_json::to_string(&record)?;
-           file.write_all(serialized.as_bytes())?;
-           file.write_all(b"\n")?;
-           last_id = record.id;
-       }
+    loop {
+        let mut stmt = connection.prepare("SELECT * FROM people WHERE age > ?")?;
+        let rows = stmt.query_map([&last_id], |row| {
+            Ok(Record {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                age: row.get(2)?,
+            })
+        })?;
 
-       thread::sleep(Duration::from_secs(1));
-   }
+        let mut file = File::create("add/output.json")?;
+
+        for row in rows {
+            let record = row?;
+            let serialized = serde_json::to_string(&record)?;
+            file.write_all(serialized.as_bytes())?;
+            file.write_all(b"\n")?;
+            last_id = record.id;
+            println!("last_id {last_id}");
+        }
+
+        thread::sleep(Duration::from_secs(1));
+    }
 }
