@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::Write;
 use std::thread;
 use std::time::Duration;
+use std::fs::OpenOptions;
 
 use rusqlite::{Connection, Result};
 use serde_derive::*;
@@ -28,10 +29,10 @@ fn main() -> Result<(), MyError> {
     let connection = Connection::open("add/test.db")?;
     connection.execute(
         "CREATE TABLE IF NOT EXISTS people (
-                 id              INTEGER PRIMARY KEY,
-                 name            TEXT NOT NULL,
-                 age             INTEGER NOT NULL
-                 );",
+                id              INTEGER PRIMARY KEY,
+                name            TEXT NOT NULL,
+                age             INTEGER NOT NULL
+                );",
         [],
     )?;
 
@@ -40,6 +41,15 @@ fn main() -> Result<(), MyError> {
     connection.execute("INSERT INTO people VALUES (2, 'Marat', 45);", [])?;
 
     let mut last_id = 0;
+
+    // let mut file = File::open("add/output.json")?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .append(true)
+        .open("add/output.json")
+        .unwrap();
 
     loop {
         let mut stmt = connection.prepare("SELECT * FROM people WHERE id > ?")?;
@@ -51,7 +61,6 @@ fn main() -> Result<(), MyError> {
             })
         })?;
 
-        let mut file = File::create("add/output.json")?;
 
         for row in rows {
             let record = row?;
