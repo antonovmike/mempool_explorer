@@ -1,10 +1,8 @@
-use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::thread;
 use std::time::Duration;
 
-use rand::Rng;
 use rusqlite::{Connection, Result};
 use serde_derive::*;
 use thiserror::Error;
@@ -74,9 +72,4 @@ fn main() -> Result<(), MyError> {
 
         thread::sleep(Duration::from_secs(1));
     }
-}
-
-fn randome_id() -> u8 {
-    let mut rng = rand::thread_rng();
-    rng.gen()
 }
