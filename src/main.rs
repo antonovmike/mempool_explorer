@@ -31,14 +31,19 @@ fn main() -> Result<(), MyError> {
                  id              INTEGER PRIMARY KEY,
                  name            TEXT NOT NULL,
                  age             INTEGER NOT NULL
-                 )",
+                 );",
+       [],
+   )?;
+   connection.execute(
+       "INSERT INTO people VALUES (0, 'Alice', 42);
+        INSERT INTO people VALUES (1, 'Mary', 69);",
        [],
    )?;
 
    let mut last_id = 0;
 
    loop {
-       let mut stmt = connection.prepare("SELECT * FROM people WHERE id > ?")?;
+       let mut stmt = connection.prepare("SELECT * FROM people WHERE age > ?")?;
        let rows = stmt.query_map([&last_id], |row| {
            Ok(Record {
                id: row.get(0)?,
