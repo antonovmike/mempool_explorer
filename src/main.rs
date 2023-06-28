@@ -37,13 +37,12 @@ fn main() -> Result<(), MyError> {
         [],
     )?;
 
-    connection.execute(&format!("INSERT INTO people VALUES ({}, 'Alice', 42);", randome_id()), [])?;
-    connection.execute(&format!("INSERT INTO people VALUES ({}, 'Mary', 69);", randome_id()), [])?;
-    connection.execute(&format!("INSERT INTO people VALUES ({}, 'Marat', 45);", randome_id()), [])?;
+    connection.execute(&format!("INSERT INTO people VALUES (0, 'Alice', 42);"), [])?;
+    connection.execute(&format!("INSERT INTO people VALUES (1, 'Mary', 69);"), [])?;
+    connection.execute(&format!("INSERT INTO people VALUES (2, 'Marat', 45);"), [])?;
 
     let mut last_id = 0;
 
-    // let mut file = File::open("add/output.json")?;
     let mut file = OpenOptions::new()
         .write(true)
         .create(true)
@@ -61,9 +60,6 @@ fn main() -> Result<(), MyError> {
                 age: row.get(2)?,
             })
         })?;
-
-
-        // file.write_fmt(format_args!("{{\nid: {}\n}}", last_id))?;
 
         for row in rows {
             let record = row?;
