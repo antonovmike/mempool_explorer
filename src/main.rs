@@ -1,9 +1,10 @@
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::thread;
 use std::time::Duration;
-use std::fs::OpenOptions;
 
+use rand::Rng;
 use rusqlite::{Connection, Result};
 use serde_derive::*;
 use thiserror::Error;
@@ -36,9 +37,9 @@ fn main() -> Result<(), MyError> {
         [],
     )?;
 
-    connection.execute("INSERT INTO people VALUES (0, 'Alice', 42);", [])?;
-    connection.execute("INSERT INTO people VALUES (1, 'Mary', 69);", [])?;
-    connection.execute("INSERT INTO people VALUES (2, 'Marat', 45);", [])?;
+    connection.execute(&format!("INSERT INTO people VALUES ({}, 'Alice', 42);", randome_id()), [])?;
+    connection.execute(&format!("INSERT INTO people VALUES ({}, 'Mary', 69);", randome_id()), [])?;
+    connection.execute(&format!("INSERT INTO people VALUES ({}, 'Marat', 45);", randome_id()), [])?;
 
     let mut last_id = 0;
 
@@ -62,15 +63,24 @@ fn main() -> Result<(), MyError> {
         })?;
 
 
+        // file.write_fmt(format_args!("{{\nid: {}\n}}", last_id))?;
+
         for row in rows {
             let record = row?;
             let serialized = serde_json::to_string(&record)?;
+
             file.write_all(serialized.as_bytes())?;
             file.write_all(b"\n")?;
+
             last_id = record.id;
             println!("last_id {last_id}");
         }
 
         thread::sleep(Duration::from_secs(1));
     }
+}
+
+fn randome_id() -> u8 {
+    let mut rng = rand::thread_rng();
+    rng.gen()
 }
