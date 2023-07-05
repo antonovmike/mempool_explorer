@@ -26,6 +26,8 @@ struct Record {
 
 fn main() -> Result<(), MyError> {
     let connection = Connection::open("add/test.db")?;
+    // let connection = Connection::open("add/mempool.sqlite")?;
+    
     connection.execute(
         "CREATE TABLE IF NOT EXISTS people (
                 id              INTEGER PRIMARY KEY,
@@ -48,6 +50,8 @@ fn main() -> Result<(), MyError> {
         .append(true)
         .open("add/output.json")
         .unwrap();
+
+    mempool().unwrap();
 
     loop {
         let mut stmt = connection.prepare("SELECT * FROM people WHERE id > ?")?;
@@ -72,4 +76,12 @@ fn main() -> Result<(), MyError> {
 
         thread::sleep(Duration::from_secs(1));
     }
+}
+
+fn mempool() -> Result<()> {
+    let conn = Connection::open("add/mempool.sqlite")?;
+    let mut stmt = conn.prepare("SELECT tx FROM mempool LIMIT 1")?;
+    let tx: Vec<u8> = stmt.query_row([], |row| row.get(0))?;
+    println!("{:?}", tx);
+    Ok(())
 }

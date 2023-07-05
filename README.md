@@ -9,5 +9,5 @@ Add new record to the data base:
 
 ```bash
 sqlite3 add/test.db
-INSERT INTO people VALUES (55, 'TEST', 77);
+INSERT INTO people VALUES (3, 'TEST', 77);
 ```
