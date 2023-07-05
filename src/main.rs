@@ -44,14 +44,21 @@ fn main() -> Result<(), MyError> {
                     .map_err(Into::into)
             })
             .and_then(|str| str.parse().map_err(Into::into))
-            .unwrap_or(0)
+            .unwrap_or_else(|err| {
+                eprintln!("Failed to read last accept time: {err}\nAssuming last accept time as 0");
+                0
+            })
     };
 
     let mut transactions: Vec<StacksTransaction> = {
         File::open(OUTPUT_JSON)
             .map_err(Into::<MyError>::into)
             .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
-            .unwrap_or_default()
+            .unwrap_or_else(|err| {
+                eprintln!("failed to load transactions: {err}\nFile will be recreated\nAssuming last accept time as 0");
+                last_accept_time = 0;
+                vec![]
+            })
     };
 
     let mut dirty = false;
