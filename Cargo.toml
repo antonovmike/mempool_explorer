@@ -5,10 +5,7 @@ edition = "2021"
 authors = ["Mike AntonovMA@outlook.com"]
 
 [dependencies]
-rand = "0.8.5"
+blockstack-core = {git = "https://github.com/stacks-network/stacks-blockchain.git", branch = "master"}
 rusqlite = { version = "*", features = ["bundled"] }
-serde = "1.0.164"
-serde_derive = "1.0.164"
 serde_json = "1.0.99"
 thiserror = "1.0.40"
-blockstack-core = {git = "https://github.com/stacks-network/stacks-blockchain.git", branch = "master"}

@@ -1,5 +1,5 @@
 use std::{
-    fs::{File, OpenOptions},
+    fs::File,
     io::{Read, Write},
     str, thread,
     time::Duration,
@@ -12,7 +12,6 @@ use blockstack_lib::{
 };
 
 use rusqlite::{Connection, Result};
-use serde_derive::*;
 use thiserror::Error;
 
 const OUTPUT_JSON: &str = "add/output.json";
@@ -30,12 +29,6 @@ enum MyError {
     StacksCoreErr(#[from] db::Error),
     #[error("parse error: {0}")]
     ParseError(#[from] std::num::ParseIntError),
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Record {
-    accept_time: String,
-    tx: Vec<u8>,
 }
 
 fn main() -> Result<(), MyError> {
