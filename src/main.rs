@@ -43,7 +43,7 @@ fn main() -> Result<(), MyError> {
                 last_accept_time = tx_info.metadata.accept_time;
             }
 
-            dbg!(tx_info.tx); // serialize, write to file
+            println!("{}", serde_json::to_string(&tx_info.tx)?); // serialize, write to file
         }
 
         thread::sleep(Duration::from_secs(5));
