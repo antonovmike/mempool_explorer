@@ -29,15 +29,6 @@ struct Record {
 
 fn main() -> Result<(), MyError> {
     let connection = Connection::open("add/mempool.sqlite")?;
-    // let mut stmt = connection.prepare("SELECT * FROM mempool")?;
-    // let mut rows = stmt.query(NO_PARAMS)?;
-    // let mut transactions = vec![];
-
-    // while let Some(row) = rows.next()? {
-    //     transactions.push(MemPoolTxInfo::from_row(row)?);
-    // }
-
-    // dbg!(transactions);
 
     let mut last_accept_time: u64 = 1687841601;
 
@@ -52,44 +43,9 @@ fn main() -> Result<(), MyError> {
                 last_accept_time = tx_info.metadata.accept_time;
             }
 
-            dbg!(tx_info.tx);
+            dbg!(tx_info.tx); // serialize, write to file
         }
 
         thread::sleep(Duration::from_secs(5));
     }
-
-    Ok(())
-
-    // let mut last_id = String::new();
-
-    // let mut file = OpenOptions::new()
-    //     .write(true)
-    //     .create(true)
-    //     .truncate(false)
-    //     .append(true)
-    //     .open("add/output.json")
-    //     .unwrap();
-
-    // loop {
-    //     let mut stmt = connection.prepare("SELECT * FROM mempool WHERE tx > ?")?;
-    //     let rows = stmt.query_map([&last_id], |row| {
-    //         Ok(Record {
-    //             id: row.get(0)?,
-    //             tx: row.get(11)?,
-    //         })
-    //     })?;
-
-    //     for row in rows {
-    //         let record = row?;
-    //         let serialized = serde_json::to_string(&record.tx)?;
-
-    //         file.write_all(serialized.as_bytes())?;
-    //         file.write_all(b"\n")?;
-
-    //         last_id = record.id;
-    //         println!("{:?}", record.tx)
-    //     }
-
-    //     thread::sleep(Duration::from_secs(5));
-    // }
 }
