@@ -23,48 +23,42 @@ enum MyError {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Record {
-    id: String,
+    accept_time: String,
     tx: Vec<u8>,
 }
 
 fn main() -> Result<(), MyError> {
     let connection = Connection::open("add/mempool.sqlite")?;
-    let mut stmt = connection.prepare("SELECT * FROM mempool")?;
-    let mut rows = stmt.query(NO_PARAMS)?;
-    let mut transactions = vec![];
+    // let mut stmt = connection.prepare("SELECT * FROM mempool")?;
+    // let mut rows = stmt.query(NO_PARAMS)?;
+    // let mut transactions = vec![];
 
-    while let Some(row) = rows.next()? {
-        transactions.push(MemPoolTxInfo::from_row(row)?);
-    }
+    // while let Some(row) = rows.next()? {
+    //     transactions.push(MemPoolTxInfo::from_row(row)?);
+    // }
 
     // dbg!(transactions);
 
-    let mut last_accept_time: u64 = 0;
+    let mut last_accept_time: u64 = 1687841601;
 
     loop {
         let mut stmt = connection.prepare("SELECT * FROM mempool WHERE accept_time > ?")?;
-        let rows = stmt.query_map([last_accept_time as i128], |row| {
-            Ok(Record {
-                id: row.get(0)?,
-                tx: row.get(11)?,
-            })
-        })?;
+        let mut rows = stmt.query([last_accept_time as i64])?;
 
-        for row in rows {
-            let record = row?;
-            let serialized = serde_json::to_string(&record.tx)?;
+        while let Some(row) = rows.next()? {
+            let tx_info = MemPoolTxInfo::from_row(row)?;
 
-            file.write_all(serialized.as_bytes())?;
-            file.write_all(b"\n")?;
+            if tx_info.metadata.accept_time > last_accept_time {
+                last_accept_time = tx_info.metadata.accept_time;
+            }
 
-            last_id = record.id;
-            println!("{:?}", record.tx)
+            dbg!(tx_info.tx);
         }
 
         thread::sleep(Duration::from_secs(5));
     }
 
-    // Ok(())
+    Ok(())
 
     // let mut last_id = String::new();
 
