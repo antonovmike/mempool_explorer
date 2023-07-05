@@ -37,9 +37,7 @@ fn main() -> Result<(), MyError> {
         [],
     )?;
 
-    connection.execute(&format!("INSERT INTO people VALUES (0, 'Alice', 42);"), [])?;
-    connection.execute(&format!("INSERT INTO people VALUES (1, 'Mary', 69);"), [])?;
-    connection.execute(&format!("INSERT INTO people VALUES (2, 'Marat', 45);"), [])?;
+    // connection.execute(&format!("INSERT INTO people VALUES (0, 'Alice', 42);"), [])?;
 
     let mut last_id = 0;
 
@@ -71,7 +69,7 @@ fn main() -> Result<(), MyError> {
             file.write_all(b"\n")?;
 
             last_id = record.id;
-            println!("last_id {last_id}");
+            println!("{last_id}, {}", record.name);
         }
 
         thread::sleep(Duration::from_secs(1));
