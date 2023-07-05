@@ -1,13 +1,22 @@
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::thread;
-use std::time::Duration;
+use std::{
+    fs::{File, OpenOptions},
+    io::{Read, Write},
+    str, thread,
+    time::Duration,
+};
 
-use blockstack_lib::{core::mempool::MemPoolTxInfo, util_lib::db::{FromRow, self}};
+use blockstack_lib::{
+    chainstate::stacks::StacksTransaction,
+    core::mempool::MemPoolTxInfo,
+    util_lib::db::{self, FromRow},
+};
 
-use rusqlite::{Connection, Result, NO_PARAMS};
+use rusqlite::{Connection, Result};
 use serde_derive::*;
 use thiserror::Error;
+
+const OUTPUT_JSON: &str = "add/output.json";
+const LAST_ACCEPT_TIME: &str = "add/last_accept_time";
 
 #[derive(Error, Debug)]
 enum MyError {
@@ -17,8 +26,10 @@ enum MyError {
     JsonError(#[from] serde_json::Error),
     #[error("file error: {0}")]
     RusQLite(#[from] std::io::Error),
-    #[error("file error: {0}")]
-    StacksCoreErr(#[from] db::Error)
+    #[error("stack core error: {0}")]
+    StacksCoreErr(#[from] db::Error),
+    #[error("parse error: {0}")]
+    ParseError(#[from] std::num::ParseIntError),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -30,7 +41,27 @@ struct Record {
 fn main() -> Result<(), MyError> {
     let connection = Connection::open("add/mempool.sqlite")?;
 
-    let mut last_accept_time: u64 = 1687841601;
+    let mut last_accept_time: u64 = {
+        File::open(LAST_ACCEPT_TIME)
+            .map_err(Into::<MyError>::into)
+            .and_then(|mut file| {
+                let mut buf = String::new();
+                file.read_to_string(&mut buf)
+                    .map(|_| buf)
+                    .map_err(Into::into)
+            })
+            .and_then(|str| str.parse().map_err(Into::into))
+            .unwrap_or(0)
+    };
+
+    let mut transactions: Vec<StacksTransaction> = {
+        File::open(OUTPUT_JSON)
+            .map_err(Into::<MyError>::into)
+            .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
+            .unwrap_or_default()
+    };
+
+    let mut dirty = false;
 
     loop {
         let mut stmt = connection.prepare("SELECT * FROM mempool WHERE accept_time > ?")?;
@@ -43,7 +74,28 @@ fn main() -> Result<(), MyError> {
                 last_accept_time = tx_info.metadata.accept_time;
             }
 
-            println!("{}", serde_json::to_string(&tx_info.tx)?); // serialize, write to file
+            transactions.push(tx_info.tx);
+            dirty = true;
+        }
+
+        if dirty {
+            let mut f = File::options()
+                .write(true)
+                .truncate(true)
+                .create(true)
+                .open(LAST_ACCEPT_TIME)?;
+            
+            write!(f, "{last_accept_time}")?;
+
+            let f = File::options()
+                .write(true)
+                .truncate(true)
+                .create(true)
+                .open(OUTPUT_JSON)?;
+
+            serde_json::to_writer(f, &transactions)?;
+
+            dirty = false;
         }
 
         thread::sleep(Duration::from_secs(5));
