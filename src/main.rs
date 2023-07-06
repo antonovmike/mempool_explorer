@@ -16,6 +16,7 @@ use thiserror::Error;
 
 const OUTPUT_JSON: &str = "add/output.json";
 const LAST_ACCEPT_TIME: &str = "add/last_accept_time";
+const BATA_BASE: &str = "add/mempool.sqlite";
 
 #[derive(Error, Debug)]
 enum MyError {
@@ -34,7 +35,7 @@ enum MyError {
 fn main() -> Result<(), MyError> {
     env_logger::init();
 
-    let connection = Connection::open("add/mempool.sqlite")?;
+    let connection = Connection::open(BATA_BASE)?;
 
     let mut last_accept_time: u64 = {
         File::open(LAST_ACCEPT_TIME)
