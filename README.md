@@ -7,3 +7,8 @@ Last accept time example "add/last_accept_time":
 1687841601
 ```
 If the file is empty, missing, or cannot be read, it will be overwritten, variable last_accept_time will be 0, and the program will reindex the database.
+
+Run with logger:
+```bash
+RUST_LOG=debug cargo run
+```
