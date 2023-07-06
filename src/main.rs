@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::{Read, Write},
-    str, thread,
+    thread,
     time::Duration,
 };
 
@@ -10,13 +10,26 @@ use blockstack_lib::{
     core::mempool::MemPoolTxInfo,
     util_lib::db::{self, FromRow},
 };
-
+use clap::Parser;
 use rusqlite::{Connection, Result};
 use thiserror::Error;
 
-const OUTPUT_JSON: &str = "add/output.json";
-const LAST_ACCEPT_TIME: &str = "add/last_accept_time";
-const BATA_BASE: &str = "add/mempool.sqlite";
+const DEFAULT_OUTPUT_FILE_NAME: &str = "output.json";
+const DEFAULT_LAST_ACCEPT_TIME_FILE_NAME: &str = "last_accept_time";
+
+#[derive(Parser, Debug)]
+struct Args {
+    /// Path to mempool DB
+    mempool_db: String,
+
+    /// Path to last_accept_time file
+    #[clap(short = 't', default_value_t = DEFAULT_LAST_ACCEPT_TIME_FILE_NAME.into())]
+    last_accept_file: String,
+
+    /// Path to the output JSON file
+    #[clap(short = 'o', default_value_t = DEFAULT_OUTPUT_FILE_NAME.into())]
+    output: String,
+}
 
 #[derive(Error, Debug)]
 enum MyError {
@@ -30,15 +43,26 @@ enum MyError {
     StacksCoreErr(#[from] db::Error),
     #[error("parse error: {0}")]
     ParseError(#[from] std::num::ParseIntError),
+    #[error("path expansion error: {0}")]
+    ExpandError(String),
 }
 
 fn main() -> Result<(), MyError> {
+    let args = Args::parse();
+
+    let last_accept_time_file_path = &*shellexpand::full(&args.last_accept_file)
+        .map_err(|e| MyError::ExpandError(format!("{e}")))?;
+    let db_path =
+        &*shellexpand::full(&args.mempool_db).map_err(|e| MyError::ExpandError(format!("{e}")))?;
+    let output_file_path =
+        &*shellexpand::full(&args.output).map_err(|e| MyError::ExpandError(format!("{e}")))?;
+
     env_logger::init();
 
-    let connection = Connection::open(BATA_BASE)?;
+    let connection = Connection::open(db_path)?;
 
     let mut last_accept_time: u64 = {
-        File::open(LAST_ACCEPT_TIME)
+        File::open(last_accept_time_file_path)
             .map_err(Into::<MyError>::into)
             .and_then(|mut file| {
                 let mut buf = String::new();
@@ -48,7 +72,9 @@ fn main() -> Result<(), MyError> {
             })
             .and_then(|str| str.parse().map_err(Into::into))
             .unwrap_or_else(|err| {
-                log::error!("Failed to read last accept time: {err}\nAssuming last accept time as 0");
+                log::warn!(
+                    "Failed to read last accept time: {err}\nAssuming last accept time as 0"
+                );
                 0
             })
     };
@@ -56,11 +82,11 @@ fn main() -> Result<(), MyError> {
     log::debug!("last_accept_time = {last_accept_time}");
 
     let mut transactions: Vec<StacksTransaction> = {
-        File::open(OUTPUT_JSON)
+        File::open(output_file_path)
             .map_err(Into::<MyError>::into)
             .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
             .unwrap_or_else(|err| {
-                log::error!("failed to load transactions: {err}\nFile will be recreated\nAssuming last accept time as 0");
+                log::warn!("failed to load transactions: {err}\nFile will be recreated\nAssuming last accept time as 0");
                 last_accept_time = 0;
                 vec![]
             })
@@ -88,15 +114,15 @@ fn main() -> Result<(), MyError> {
                 .write(true)
                 .truncate(true)
                 .create(true)
-                .open(LAST_ACCEPT_TIME)?;
-            
+                .open(last_accept_time_file_path)?;
+
             write!(f, "{last_accept_time}")?;
 
             let f = File::options()
                 .write(true)
                 .truncate(true)
                 .create(true)
-                .open(OUTPUT_JSON)?;
+                .open(output_file_path)?;
 
             serde_json::to_writer_pretty(f, &transactions)?;
 
