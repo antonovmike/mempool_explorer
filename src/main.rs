@@ -99,7 +99,7 @@ fn main() -> Result<(), MyError> {
                 .create(true)
                 .open(OUTPUT_JSON)?;
 
-            serde_json::to_writer(f, &transactions)?;
+            serde_json::to_writer_pretty(f, &transactions)?;
 
             dirty = false;
         }
