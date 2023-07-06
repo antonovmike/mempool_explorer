@@ -12,9 +12,13 @@ Run with path to your data base (necessary):
 ```bash
 RUST_LOG=debug cargo run -- add/mempool.sqlite
 ```
-Run with path to outpun json (optional)
+Run with path to outpun json (optional):
 ```bash
 RUST_LOG=debug cargo run -- add/mempool.sqlite -o add/output.json
+```
+Run with path to last_accept_time (optional):
+```bash
+RUST_LOG=debug cargo run -- add/mempool.sqlite -t add/last_accept_time
 ```
 Replace "add' with path to your directory. 
 
