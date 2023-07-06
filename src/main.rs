@@ -1,5 +1,4 @@
 use std::{
-    borrow::Cow,
     fs::File,
     io::{Read, Write},
     thread,
@@ -21,15 +20,15 @@ const DEFAULT_LAST_ACCEPT_TIME_FILE_NAME: &str = "last_accept_time";
 #[derive(Parser, Debug)]
 struct Args {
     /// Path to mempool DB
-    db: String,
+    mempool_db: String,
 
     /// Path to last_accept_time file
-    #[clap(short = 't')]
-    last_accept_file: Option<String>,
+    #[clap(short = 't', default_value_t = DEFAULT_LAST_ACCEPT_TIME_FILE_NAME.into())]
+    last_accept_file: String,
 
     /// Path to the output JSON file
-    #[clap(short = 'o')]
-    output: Option<String>,
+    #[clap(short = 'o', default_value_t = DEFAULT_OUTPUT_FILE_NAME.into())]
+    output: String,
 }
 
 #[derive(Error, Debug)]
@@ -51,16 +50,12 @@ enum MyError {
 fn main() -> Result<(), MyError> {
     let args = Args::parse();
 
-    let last_accept_time_file_path = &*match &args.last_accept_file {
-        Some(path) => shellexpand::full(path).map_err(|e| MyError::ExpandError(format!("{e}")))?,
-        None => Cow::Borrowed(DEFAULT_LAST_ACCEPT_TIME_FILE_NAME),
-    };
+    let last_accept_time_file_path = &*shellexpand::full(&args.last_accept_file)
+        .map_err(|e| MyError::ExpandError(format!("{e}")))?;
     let db_path =
-        &*shellexpand::full(&args.db).map_err(|e| MyError::ExpandError(format!("{e}")))?;
-    let output_file_path = &*match &args.output {
-        Some(path) => shellexpand::full(path).map_err(|e| MyError::ExpandError(format!("{e}")))?,
-        None => Cow::Borrowed(DEFAULT_OUTPUT_FILE_NAME),
-    };
+        &*shellexpand::full(&args.mempool_db).map_err(|e| MyError::ExpandError(format!("{e}")))?;
+    let output_file_path =
+        &*shellexpand::full(&args.output).map_err(|e| MyError::ExpandError(format!("{e}")))?;
 
     env_logger::init();
 
@@ -77,7 +72,7 @@ fn main() -> Result<(), MyError> {
             })
             .and_then(|str| str.parse().map_err(Into::into))
             .unwrap_or_else(|err| {
-                log::error!(
+                log::warn!(
                     "Failed to read last accept time: {err}\nAssuming last accept time as 0"
                 );
                 0
@@ -91,7 +86,7 @@ fn main() -> Result<(), MyError> {
             .map_err(Into::<MyError>::into)
             .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
             .unwrap_or_else(|err| {
-                log::error!("failed to load transactions: {err}\nFile will be recreated\nAssuming last accept time as 0");
+                log::warn!("failed to load transactions: {err}\nFile will be recreated\nAssuming last accept time as 0");
                 last_accept_time = 0;
                 vec![]
             })
