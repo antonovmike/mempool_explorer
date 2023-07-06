@@ -11,7 +11,6 @@ use blockstack_lib::{
     util_lib::db::{self, FromRow},
 };
 
-use env_logger::Builder;
 use rusqlite::{Connection, Result};
 use thiserror::Error;
 
@@ -33,7 +32,7 @@ enum MyError {
 }
 
 fn main() -> Result<(), MyError> {
-    Builder::new().init();
+    env_logger::init();
 
     let connection = Connection::open("add/mempool.sqlite")?;
 
