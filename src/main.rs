@@ -50,6 +50,8 @@ fn main() -> Result<(), MyError> {
             })
     };
 
+    log::debug!("last_accept_time {last_accept_time}");
+
     let mut transactions: Vec<StacksTransaction> = {
         File::open(OUTPUT_JSON)
             .map_err(Into::<MyError>::into)
@@ -70,6 +72,8 @@ fn main() -> Result<(), MyError> {
         while let Some(row) = rows.next()? {
             let tx_info = MemPoolTxInfo::from_row(row)?;
 
+            log::debug!("tx_info {tx_info:?}");
+
             if tx_info.metadata.accept_time > last_accept_time {
                 last_accept_time = tx_info.metadata.accept_time;
             }
@@ -84,6 +88,8 @@ fn main() -> Result<(), MyError> {
                 .truncate(true)
                 .create(true)
                 .open(LAST_ACCEPT_TIME)?;
+
+            log::debug!("f {f:?}");
             
             write!(f, "{last_accept_time}")?;
 
