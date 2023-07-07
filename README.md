@@ -29,3 +29,9 @@ Run with logger:
 RUST_LOG=debug cargo run -- add/mempool.sqlite
 RUST_LOG=debug cargo run -- add/mempool.sqlite -o add/output.json
 ```
+
+Build and run:
+```bash
+cargo build
+RUST_LOG=debug ./target/debug/db_to_json_1 add/mempool.sqlite
+```
