@@ -129,6 +129,8 @@ fn main() -> Result<(), MyError> {
             dirty = false;
         }
 
+        log::debug!("last_accept_time changed to {last_accept_time}");
+        
         thread::sleep(Duration::from_secs(5));
     }
 }
