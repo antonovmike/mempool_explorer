@@ -110,7 +110,7 @@ fn main() -> Result<(), MyError> {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Failed to get system time")
                 .as_millis();
-            println!("Transaction added: {:?}", human_readable_time);
+            println!("Transaction added: {:?} milliseconds", human_readable_time);
 
             transactions.push(tx_info.tx);
             dirty = true;
