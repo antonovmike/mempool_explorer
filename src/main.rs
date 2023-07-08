@@ -109,7 +109,7 @@ fn main() -> Result<(), MyError> {
             let human_readable_time = current_time
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Failed to get system time")
-                .as_secs();
+                .as_millis();
             println!("Transaction added: {:?}", human_readable_time);
 
             transactions.push(tx_info.tx);
