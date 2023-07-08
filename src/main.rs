@@ -105,7 +105,12 @@ fn main() -> Result<(), MyError> {
                 last_accept_time = tx_info.metadata.accept_time;
             }
 
-            println!("Transaction added: {:?}", SystemTime::now());
+            let current_time = SystemTime::now();
+            let human_readable_time = current_time
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .expect("Failed to get system time")
+                .as_secs();
+            println!("Transaction added: {:?}", human_readable_time);
 
             transactions.push(tx_info.tx);
             dirty = true;
