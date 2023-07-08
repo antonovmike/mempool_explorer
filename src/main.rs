@@ -2,7 +2,7 @@ use std::{
     fs::File,
     io::{Read, Write},
     thread,
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 use blockstack_lib::{
@@ -105,6 +105,8 @@ fn main() -> Result<(), MyError> {
                 last_accept_time = tx_info.metadata.accept_time;
             }
 
+            println!("Transaction added: {:?}", SystemTime::now());
+
             transactions.push(tx_info.tx);
             dirty = true;
         }
@@ -116,6 +118,7 @@ fn main() -> Result<(), MyError> {
                 .create(true)
                 .open(last_accept_time_file_path)?;
 
+            log::debug!("last_accept_time is changed to {last_accept_time}");
             write!(f, "{last_accept_time}")?;
 
             let f = File::options()
@@ -129,8 +132,6 @@ fn main() -> Result<(), MyError> {
             dirty = false;
         }
 
-        log::debug!("last_accept_time changed to {last_accept_time}");
-        
         thread::sleep(Duration::from_secs(5));
     }
 }
