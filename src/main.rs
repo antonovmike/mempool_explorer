@@ -2,7 +2,7 @@ use std::{
     fs::File,
     io::{Read, Write},
     thread,
-    time::{Duration, SystemTime},
+    time::Duration,
 };
 
 use blockstack_lib::{
@@ -14,8 +14,8 @@ use clap::Parser;
 use rusqlite::{Connection, Result};
 use thiserror::Error;
 
-const DEFAULT_OUTPUT_FILE_NAME: &str = "output.json";
-const DEFAULT_LAST_ACCEPT_TIME_FILE_NAME: &str = "last_accept_time";
+const DEFAULT_OUTPUT_FILE_NAME: &str = "add/output.json";
+const DEFAULT_LAST_ACCEPT_TIME_FILE_NAME: &str = "add/last_accept_time";
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -104,13 +104,6 @@ fn main() -> Result<(), MyError> {
             if tx_info.metadata.accept_time > last_accept_time {
                 last_accept_time = tx_info.metadata.accept_time;
             }
-
-            let current_time = SystemTime::now();
-            let human_readable_time = current_time
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .expect("Failed to get system time")
-                .as_millis();
-            println!("Transaction added: {:?} milliseconds", human_readable_time);
 
             transactions.push(tx_info.tx);
             dirty = true;
