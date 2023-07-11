@@ -14,8 +14,8 @@ use clap::Parser;
 use rusqlite::{Connection, Result};
 use thiserror::Error;
 
-const DEFAULT_OUTPUT_FILE_NAME: &str = "add/output.json";
-const DEFAULT_LAST_ACCEPT_TIME_FILE_NAME: &str = "add/last_accept_time";
+const DEFAULT_OUTPUT_FILE_NAME: &str = "output.json";
+const DEFAULT_LAST_ACCEPT_TIME_FILE_NAME: &str = "last_accept_time";
 
 #[derive(Parser, Debug)]
 struct Args {
