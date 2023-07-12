@@ -31,22 +31,6 @@ struct Args {
     output: String,
 }
 
-struct Payload {
-    contract_call: ContractCall,
-}
-
-struct ContractCall {
-    address: Address,
-    contract_name: String,
-    function_name: String,
-    function_args: String,
-}
-
-struct Address {
-    version: i32,
-    bytes: String,
-}
-
 #[derive(Error, Debug)]
 enum MyError {
     #[error("database error: {0}")]
