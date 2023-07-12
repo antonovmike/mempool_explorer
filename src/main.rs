@@ -2,7 +2,7 @@ use std::{
     fs::File,
     io::{Read, Write},
     thread,
-    time::Duration, num::ParseIntError,
+    time::Duration, num::ParseIntError, fmt::format,
 };
 
 use blockstack_lib::{
@@ -98,11 +98,13 @@ fn main() -> Result<(), MyError> {
         let mut stmt = connection.prepare("SELECT * FROM mempool WHERE accept_time > ?")?;
         let mut rows = stmt.query([last_accept_time as i64])?;
 
+        let mut part_of_file_name = String::new();
+
         while let Some(row) = rows.next()? {
             let tx_info = MemPoolTxInfo::from_row(row)?;
 
             let name_of_smart_contract = tx_info.clone();
-            let part_of_file_name = contract_name(name_of_smart_contract);
+            part_of_file_name = contract_name(name_of_smart_contract);
             println!("\tTEST\n{part_of_file_name}");
 
             if tx_info.metadata.accept_time > last_accept_time {
@@ -122,6 +124,8 @@ fn main() -> Result<(), MyError> {
 
             log::debug!("last_accept_time is changed to {last_accept_time}");
             write!(f, "{last_accept_time}")?;
+
+            let output_file_path = format!("add/{}.json", part_of_file_name);
 
             let f = File::options()
                 .write(true)
