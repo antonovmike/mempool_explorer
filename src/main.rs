@@ -2,7 +2,7 @@ use std::{
     fs::File,
     io::{Read, Write},
     thread,
-    time::Duration,
+    time::Duration, num::ParseIntError,
 };
 
 use blockstack_lib::{
@@ -100,6 +100,9 @@ fn main() -> Result<(), MyError> {
 
         while let Some(row) = rows.next()? {
             let tx_info = MemPoolTxInfo::from_row(row)?;
+
+            let name_of_smart_contract = tx_info.tx.clone().payload;
+            println!("name_of_smart_contract:\n{name_of_smart_contract:?}");
 
             if tx_info.metadata.accept_time > last_accept_time {
                 last_accept_time = tx_info.metadata.accept_time;
