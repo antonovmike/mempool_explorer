@@ -105,7 +105,7 @@ fn main() -> Result<(), MyError> {
 
             let name_of_smart_contract = tx_info.clone();
             part_of_file_name = contract_name(name_of_smart_contract);
-            println!("\tTEST\n{part_of_file_name}");
+            println!("\tFILE NAME:\n{part_of_file_name}");
 
             if tx_info.metadata.accept_time > last_accept_time {
                 last_accept_time = tx_info.metadata.accept_time;
@@ -143,20 +143,18 @@ fn main() -> Result<(), MyError> {
 }
 
 fn contract_name(name_of_smart_contract: MemPoolTxInfo) -> String {
-    let string = format!("{:?}", name_of_smart_contract.tx.payload);
-    let substring = "ContractName(\"";
-    let split = string.splitn(2, substring);
-    let string_2 = match split.last() {
-        Some(trimmed) => trimmed,
-        None => &string,
-    };
+    let contract_str = format!("{:?}", name_of_smart_contract);
+    let parts: Vec<&str> = contract_str.split(',').collect();
 
-    let substring = "\"), function_name";
-    let mut split = string_2.splitn(2, substring);
-    let string_3 = match split.next() {
-        Some(trimmed) => trimmed,
-        None => &string,
-    };
+    let mut contract_name = "";
+    for part in parts {
+        if part.contains("ContractName") {
+            let start = part.find("\"").unwrap() + 1;
+            let end = part.rfind("\"").unwrap();
+            contract_name = &part[start..end];
+            break;
+        }
+    }
 
-    string_3.to_string()
+    contract_name.to_string()
 }
