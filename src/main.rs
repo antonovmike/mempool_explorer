@@ -102,7 +102,8 @@ fn main() -> Result<(), MyError> {
             let tx_info = MemPoolTxInfo::from_row(row)?;
 
             let name_of_smart_contract = tx_info.clone();
-            contract_name(name_of_smart_contract);
+            let part_of_file_name = contract_name(name_of_smart_contract);
+            println!("\tTEST\n{part_of_file_name}");
 
             if tx_info.metadata.accept_time > last_accept_time {
                 last_accept_time = tx_info.metadata.accept_time;
@@ -137,7 +138,7 @@ fn main() -> Result<(), MyError> {
     }
 }
 
-fn contract_name(name_of_smart_contract: MemPoolTxInfo) {
+fn contract_name(name_of_smart_contract: MemPoolTxInfo) -> String {
     let string = format!("{:?}", name_of_smart_contract.tx.payload);
     let substring = "ContractName(\"";
     let split = string.splitn(2, substring);
@@ -152,5 +153,6 @@ fn contract_name(name_of_smart_contract: MemPoolTxInfo) {
         Some(trimmed) => trimmed,
         None => &string,
     };
-    println!("\tTEST\n{string_3}");
+
+    string_3.to_string()
 }
