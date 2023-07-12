@@ -31,6 +31,22 @@ struct Args {
     output: String,
 }
 
+struct Payload {
+    contract_call: ContractCall,
+}
+
+struct ContractCall {
+    address: Address,
+    contract_name: String,
+    function_name: String,
+    function_args: String,
+}
+
+struct Address {
+    version: i32,
+    bytes: String,
+}
+
 #[derive(Error, Debug)]
 enum MyError {
     #[error("database error: {0}")]
@@ -101,8 +117,8 @@ fn main() -> Result<(), MyError> {
         while let Some(row) = rows.next()? {
             let tx_info = MemPoolTxInfo::from_row(row)?;
 
-            let name_of_smart_contract = tx_info.tx.clone().payload;
-            println!("name_of_smart_contract:\n{name_of_smart_contract:?}");
+            let name_of_smart_contract = tx_info.clone();
+            contract_name(name_of_smart_contract);
 
             if tx_info.metadata.accept_time > last_accept_time {
                 last_accept_time = tx_info.metadata.accept_time;
@@ -135,4 +151,22 @@ fn main() -> Result<(), MyError> {
 
         thread::sleep(Duration::from_secs(5));
     }
+}
+
+fn contract_name(name_of_smart_contract: MemPoolTxInfo) {
+    let string = format!("{:?}", name_of_smart_contract.tx.payload);
+    let substring = "ContractName(\"";
+    let split = string.splitn(2, substring);
+    let string_2 = match split.last() {
+        Some(trimmed) => trimmed,
+        None => &string,
+    };
+
+    let substring = "\"), function_name";
+    let mut split = string_2.splitn(2, substring);
+    let string_3 = match split.next() {
+        Some(trimmed) => trimmed,
+        None => &string,
+    };
+    println!("\tTEST\n{string_3}");
 }
