@@ -121,7 +121,7 @@ fn main() -> Result<(), MyError> {
 
             transactions.push(tx_info.tx);
 
-            test_function(&transactions, smart_contract);
+            separate_files(&transactions, smart_contract);
 
             dirty = true;
         }
@@ -192,7 +192,7 @@ impl SmartContract {
     }
 }
 
-fn test_function(transactions: &Vec<StacksTransaction>, smart_contract: SmartContract) {
+fn separate_files(transactions: &Vec<StacksTransaction>, smart_contract: SmartContract) {
     let mut named_transactions: Vec<(String, Vec<StacksTransaction>)> = vec![];
 
     for tx in transactions.iter() {
@@ -209,6 +209,7 @@ fn test_function(transactions: &Vec<StacksTransaction>, smart_contract: SmartCon
     }
 
     for (name, txs) in named_transactions.iter() {
+        let name = format!("add/files/{}.json", name);
         let path = Path::new(&name);
         if path.exists() {
             let mut temporary_vector: Vec<StacksTransaction> = {
