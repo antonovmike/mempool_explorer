@@ -1,19 +1,23 @@
 use std::{
-    fs::{File, OpenOptions},
+    fs::File,
     io::{Read, Write},
     thread,
-    time::Duration, path::Path,
-    // num::ParseIntError, fmt::format,
+    time::Duration,
 };
 
 use blockstack_lib::{
     chainstate::stacks::StacksTransaction,
     core::mempool::MemPoolTxInfo,
-    util_lib::db::{self, FromRow},
+    util_lib::db::FromRow,
 };
 use clap::Parser;
 use rusqlite::{Connection, Result};
-use thiserror::Error;
+
+use crate::error_handler::MyError;
+use crate::file_processing::*;
+
+mod error_handler;
+mod file_processing;
 
 const DEFAULT_OUTPUT_FILE_NAME: &str = "output.json";
 const DEFAULT_LAST_ACCEPT_TIME_FILE_NAME: &str = "last_accept_time";
@@ -30,22 +34,6 @@ struct Args {
     /// Path to the output JSON file
     #[clap(short = 'o', default_value_t = DEFAULT_OUTPUT_FILE_NAME.into())]
     output: String,
-}
-
-#[derive(Error, Debug)]
-enum MyError {
-    #[error("database error: {0}")]
-    DatabaseError(#[from] rusqlite::Error),
-    #[error("json error: {0}")]
-    JsonError(#[from] serde_json::Error),
-    #[error("file error: {0}")]
-    RusQLite(#[from] std::io::Error),
-    #[error("stack core error: {0}")]
-    StacksCoreErr(#[from] db::Error),
-    #[error("parse error: {0}")]
-    ParseError(#[from] std::num::ParseIntError),
-    #[error("path expansion error: {0}")]
-    ExpandError(String),
 }
 
 fn main() -> Result<(), MyError> {
@@ -148,87 +136,5 @@ fn main() -> Result<(), MyError> {
         }
 
         thread::sleep(Duration::from_secs(5));
-    }
-}
-
-pub struct SmartContract {
-    name_of_smart_contract: MemPoolTxInfo,
-    tx_info_tx: StacksTransaction,
-    filename: String,
-}
-
-impl SmartContract {
-    fn contract_name(&self) -> String {
-        let contract_str = format!("{:?}", self.name_of_smart_contract);
-        let parts: Vec<&str> = contract_str.split(',').collect();
-
-        let mut contract_name = "";
-        for part in parts {
-            if part.contains("ContractName") {
-                let start = part.find('"').unwrap() + 1;
-                let end = part.rfind('"').unwrap();
-                contract_name = &part[start..end];
-                break;
-            }
-        }
-
-        contract_name.to_string()
-    }
-
-    // fn create_file(&self) -> Result<(), MyError> {
-    //     let file = File::create(&self.filename)?;
-    //     serde_json::to_writer_pretty(file, &self.tx_info_tx)?;
-    //     Ok(())
-    // }
-
-    fn append_data(&self) -> Result<(), MyError> {
-        let file = OpenOptions::new().append(true).open(&self.filename)?;
-        serde_json::to_writer_pretty(file, &self.tx_info_tx)?;
-        Ok(())
-    }
-}
-
-fn separate_files(transactions: &[StacksTransaction], smart_contract: SmartContract) {
-    let mut named_transactions: Vec<(String, Vec<StacksTransaction>)> = vec![];
-
-    for tx in transactions.iter() {
-        let name = smart_contract.contract_name();
-        if !name.is_empty() {
-            if let Some((_, ref mut txs)) =
-                named_transactions.iter_mut().find(|(n, _)| n == &name)
-            {
-                txs.push(tx.clone());
-            } else {
-                named_transactions.push((name.clone(), vec![tx.clone()]));
-            }
-        }
-    }
-
-    for (name, txs) in named_transactions.iter() {
-        let name = format!("add/files/{}.json", name);
-        let path = Path::new(&name);
-        if path.exists() {
-            let mut temporary_vector: Vec<StacksTransaction> = {
-                File::open(path)
-                    .map_err(Into::<MyError>::into)
-                    .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
-                    .unwrap_or_else(|err| {
-                        log::warn!("failed to load transactions: {err}\nFile will be recreated");
-                        vec![]
-                    })
-            };
-            temporary_vector.extend_from_slice(txs.as_slice());
-            File::create(path).and_then(|mut f| f.write_all(serde_json::to_string_pretty(&temporary_vector).unwrap().as_bytes())).unwrap();
-        } else {
-            File::create(path).unwrap();
-            for tx in txs.iter() {
-                let sc = SmartContract {
-                    name_of_smart_contract: smart_contract.name_of_smart_contract.clone(),
-                    tx_info_tx: tx.clone(),
-                    filename: name.clone(),
-                };
-                sc.append_data().unwrap();
-            }
-        }
     }
 }
