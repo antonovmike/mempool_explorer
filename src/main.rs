@@ -112,7 +112,6 @@ fn main() -> Result<(), MyError> {
                 filename: filename.clone(),
             };
 
-            // let name_of_smart_contract = tx_info.clone();
             part_of_file_name = SmartContract::contract_name(&smart_contract);
             println!("\tFILE NAME:\t{part_of_file_name:?}");
 
@@ -120,16 +119,10 @@ fn main() -> Result<(), MyError> {
                 last_accept_time = tx_info.metadata.accept_time;
             }
 
-            // Check if the file already exists
-            if Path::new(&filename).exists() {
-                // Append new data to the existing file
-                SmartContract::append_data(&smart_contract)?;
-            } else {
-                // Create a new file and add data to it
-                SmartContract::create_file(&smart_contract)?;
-            }
-
             transactions.push(tx_info.tx);
+
+            test_function(&transactions, smart_contract);
+
             dirty = true;
         }
 
@@ -196,5 +189,51 @@ impl SmartContract {
         serde_json::to_writer_pretty(file, &self.tx_info_tx)?;
 
         Ok(())
+    }
+}
+
+fn test_function(transactions: &Vec<StacksTransaction>, smart_contract: SmartContract) {
+    let mut named_transactions: Vec<(String, Vec<StacksTransaction>)> = vec![];
+
+    for tx in transactions.iter() {
+        let name = smart_contract.contract_name();
+        if !name.is_empty() {
+            if let Some((_, ref mut txs)) =
+                named_transactions.iter_mut().find(|(n, _)| n == &name)
+            {
+                txs.push(tx.clone());
+            } else {
+                named_transactions.push((name.clone(), vec![tx.clone()]));
+            }
+        }
+    }
+
+    for (name, txs) in named_transactions.iter() {
+        let path = Path::new(&name);
+        if path.exists() {
+            // let mut temporary_vector: Vec<StacksTransaction> = vec![];
+            // File::open(path).and_then(|mut f| f.read_to_end(&mut temporary_vector)).unwrap();
+            let mut temporary_vector: Vec<StacksTransaction> = {
+                File::open(path)
+                    .map_err(Into::<MyError>::into)
+                    .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
+                    .unwrap_or_else(|err| {
+                        log::warn!("failed to load transactions: {err}\nFile will be recreated\nAssuming last accept time as 0");
+                        vec![]
+                    })
+            };
+            temporary_vector.extend_from_slice(txs.as_slice());
+            File::create(path).and_then(|mut f| f.write_all(serde_json::to_string_pretty(&temporary_vector).unwrap().as_bytes())).unwrap();
+        } else {
+            File::create(path).unwrap();
+            for tx in txs.iter() {
+                let sc = SmartContract {
+                    name_of_smart_contract: smart_contract.name_of_smart_contract.clone(),
+                    tx_info_tx: tx.clone(),
+                    filename: name.clone(),
+                };
+                sc.append_data().unwrap();
+            }
+        }
     }
 }
