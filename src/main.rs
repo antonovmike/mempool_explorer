@@ -104,8 +104,14 @@ fn main() -> Result<(), MyError> {
         while let Some(row) = rows.next()? {
             let tx_info = MemPoolTxInfo::from_row(row)?;
 
+            let smart_contract = SmartContract {
+                name_of_smart_contract: tx_info.clone(),
+                tx_info_tx: tx_info.clone().tx,
+                filename: part_of_file_name,
+            };
+
             let name_of_smart_contract = tx_info.clone();
-            part_of_file_name = contract_name(name_of_smart_contract);
+            part_of_file_name = SmartContract::contract_name(&smart_contract);
             println!("\tFILE NAME:\t{part_of_file_name:?}");
 
             if tx_info.metadata.accept_time > last_accept_time {
@@ -116,10 +122,10 @@ fn main() -> Result<(), MyError> {
             // Check if the file already exists
             if Path::new(&filename).exists() {
                 // Append new data to the existing file
-                append_data(&filename, &tx_info.tx)?;
+                SmartContract::append_data(&smart_contract)?;
             } else {
                 // Create a new file and add data to it
-                create_file(&filename, &tx_info.tx)?;
+                SmartContract::create_file(&smart_contract)?;
             }
 
             transactions.push(tx_info.tx);
@@ -151,35 +157,43 @@ fn main() -> Result<(), MyError> {
     }
 }
 
-fn contract_name(name_of_smart_contract: MemPoolTxInfo) -> String {
-    let contract_str = format!("{:?}", name_of_smart_contract);
-    let parts: Vec<&str> = contract_str.split(',').collect();
+pub struct SmartContract {
+    name_of_smart_contract: MemPoolTxInfo,
+    tx_info_tx: StacksTransaction,
+    filename: String,
+}
 
-    let mut contract_name = "";
-    for part in parts {
-        if part.contains("ContractName") {
-            let start = part.find("\"").unwrap() + 1;
-            let end = part.rfind("\"").unwrap();
-            contract_name = &part[start..end];
-            break;
+impl SmartContract {
+    fn contract_name(&self) -> String {
+        let contract_str = format!("{:?}", self.name_of_smart_contract);
+        let parts: Vec<&str> = contract_str.split(',').collect();
+
+        let mut contract_name = "";
+        for part in parts {
+            if part.contains("ContractName") {
+                let start = part.find("\"").unwrap() + 1;
+                let end = part.rfind("\"").unwrap();
+                contract_name = &part[start..end];
+                break;
+            }
         }
+
+        contract_name.to_string()
     }
 
-    contract_name.to_string()
-}
+    fn create_file(&self) -> Result<(), MyError> {
+        let file = File::create(&self.filename)?;
 
-fn create_file(filename: &str, tx_info_tx: &StacksTransaction) -> Result<(), MyError> {
-    let file = File::create(filename)?;
+        serde_json::to_writer_pretty(file, &self.tx_info_tx)?;
 
-    serde_json::to_writer_pretty(file, &tx_info_tx)?;
+        Ok(())
+    }
 
-    Ok(())
-}
+    fn append_data(&self) -> Result<(), MyError> {
+        let file = OpenOptions::new().append(true).open(&self.filename)?;
 
-fn append_data(filename: &str, tx_info_tx: &StacksTransaction) -> Result<(), MyError> {
-    let file = OpenOptions::new().append(true).open(filename)?;
+        serde_json::to_writer_pretty(file, &self.tx_info_tx)?;
 
-    serde_json::to_writer_pretty(file, &tx_info_tx)?;
-
-    Ok(())
+        Ok(())
+    }
 }
