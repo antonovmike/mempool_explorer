@@ -116,10 +116,10 @@ fn main() -> Result<(), MyError> {
             // Check if the file already exists
             if Path::new(&filename).exists() {
                 // Append new data to the existing file
-                append_data(&filename)?;
+                append_data(&filename, &tx_info.tx)?;
             } else {
                 // Create a new file and add data to it
-                create_file(&filename)?;
+                create_file(&filename, &tx_info.tx)?;
             }
 
             transactions.push(tx_info.tx);
@@ -168,30 +168,18 @@ fn contract_name(name_of_smart_contract: MemPoolTxInfo) -> String {
     contract_name.to_string()
 }
 
-fn create_file(filename: &str) -> Result<(), MyError> {
-    let data = r#"[
-        {
-            "field 1": "test 1",
-            "field 2": "test 1"
-        },
-        {
-            "field 1": "test 2",
-            "field 2": "test 2"
-        }
-    ]"#;
+fn create_file(filename: &str, tx_info_tx: &StacksTransaction) -> Result<(), MyError> {
+    let file = File::create(filename)?;
 
-    let mut file = File::create(filename)?;
-    file.write_all(data.as_bytes())?;
+    serde_json::to_writer_pretty(file, &tx_info_tx)?;
+
     Ok(())
 }
 
-fn append_data(filename: &str) -> Result<(), MyError> {
-    let data = r#", {
-        "field 1": "test 3",
-        "field 2": "test 3"
-    }"#;
+fn append_data(filename: &str, tx_info_tx: &StacksTransaction) -> Result<(), MyError> {
+    let file = OpenOptions::new().append(true).open(filename)?;
 
-    let mut file = OpenOptions::new().append(true).open(filename)?;
-    file.write_all(data.as_bytes())?;
+    serde_json::to_writer_pretty(file, &tx_info_tx)?;
+
     Ok(())
 }
