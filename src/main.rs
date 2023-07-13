@@ -1,8 +1,9 @@
 use std::{
-    fs::File,
+    fs::{File, OpenOptions},
     io::{Read, Write},
     thread,
-    time::Duration, num::ParseIntError, fmt::format,
+    time::Duration, path::Path,
+    // num::ParseIntError, fmt::format,
 };
 
 use blockstack_lib::{
@@ -105,10 +106,20 @@ fn main() -> Result<(), MyError> {
 
             let name_of_smart_contract = tx_info.clone();
             part_of_file_name = contract_name(name_of_smart_contract);
-            println!("\tFILE NAME:\n{part_of_file_name}");
+            println!("\tFILE NAME:\t{part_of_file_name:?}");
 
             if tx_info.metadata.accept_time > last_accept_time {
                 last_accept_time = tx_info.metadata.accept_time;
+            }
+
+            let filename = format!("add/files/{}.json", part_of_file_name);
+            // Check if the file already exists
+            if Path::new(&filename).exists() {
+                // Append new data to the existing file
+                append_data(&filename)?;
+            } else {
+                // Create a new file and add data to it
+                create_file(&filename)?;
             }
 
             transactions.push(tx_info.tx);
@@ -124,8 +135,6 @@ fn main() -> Result<(), MyError> {
 
             log::debug!("last_accept_time is changed to {last_accept_time}");
             write!(f, "{last_accept_time}")?;
-
-            let output_file_path = format!("add/{}.json", part_of_file_name);
 
             let f = File::options()
                 .write(true)
@@ -157,4 +166,32 @@ fn contract_name(name_of_smart_contract: MemPoolTxInfo) -> String {
     }
 
     contract_name.to_string()
+}
+
+fn create_file(filename: &str) -> Result<(), MyError> {
+    let data = r#"[
+        {
+            "field 1": "test 1",
+            "field 2": "test 1"
+        },
+        {
+            "field 1": "test 2",
+            "field 2": "test 2"
+        }
+    ]"#;
+
+    let mut file = File::create(filename)?;
+    file.write_all(data.as_bytes())?;
+    Ok(())
+}
+
+fn append_data(filename: &str) -> Result<(), MyError> {
+    let data = r#", {
+        "field 1": "test 3",
+        "field 2": "test 3"
+    }"#;
+
+    let mut file = OpenOptions::new().append(true).open(filename)?;
+    file.write_all(data.as_bytes())?;
+    Ok(())
 }
