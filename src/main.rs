@@ -211,14 +211,12 @@ fn test_function(transactions: &Vec<StacksTransaction>, smart_contract: SmartCon
     for (name, txs) in named_transactions.iter() {
         let path = Path::new(&name);
         if path.exists() {
-            // let mut temporary_vector: Vec<StacksTransaction> = vec![];
-            // File::open(path).and_then(|mut f| f.read_to_end(&mut temporary_vector)).unwrap();
             let mut temporary_vector: Vec<StacksTransaction> = {
                 File::open(path)
                     .map_err(Into::<MyError>::into)
                     .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
                     .unwrap_or_else(|err| {
-                        log::warn!("failed to load transactions: {err}\nFile will be recreated\nAssuming last accept time as 0");
+                        log::warn!("failed to load transactions: {err}\nFile will be recreated");
                         vec![]
                     })
             };
