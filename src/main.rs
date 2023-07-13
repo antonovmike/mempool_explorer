@@ -104,13 +104,15 @@ fn main() -> Result<(), MyError> {
         while let Some(row) = rows.next()? {
             let tx_info = MemPoolTxInfo::from_row(row)?;
 
+            let filename = format!("add/files/{}.json", part_of_file_name);
+
             let smart_contract = SmartContract {
                 name_of_smart_contract: tx_info.clone(),
                 tx_info_tx: tx_info.clone().tx,
-                filename: part_of_file_name,
+                filename: filename.clone(),
             };
 
-            let name_of_smart_contract = tx_info.clone();
+            // let name_of_smart_contract = tx_info.clone();
             part_of_file_name = SmartContract::contract_name(&smart_contract);
             println!("\tFILE NAME:\t{part_of_file_name:?}");
 
@@ -118,7 +120,6 @@ fn main() -> Result<(), MyError> {
                 last_accept_time = tx_info.metadata.accept_time;
             }
 
-            let filename = format!("add/files/{}.json", part_of_file_name);
             // Check if the file already exists
             if Path::new(&filename).exists() {
                 // Append new data to the existing file
