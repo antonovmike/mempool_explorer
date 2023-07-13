@@ -101,7 +101,7 @@ fn main() -> Result<(), MyError> {
             };
 
             part_of_file_name = SmartContract::contract_name(&smart_contract);
-            println!("\tFILE NAME:\t{part_of_file_name:?}");
+            // println!("\tFILE NAME:\t{part_of_file_name:?}");
 
             if tx_info.metadata.accept_time > last_accept_time {
                 last_accept_time = tx_info.metadata.accept_time;

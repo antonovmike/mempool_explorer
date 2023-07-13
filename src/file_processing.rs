@@ -66,15 +66,17 @@ pub fn separate_files(transactions: &[StacksTransaction], smart_contract: SmartC
     }
 
     for (name, txs) in named_transactions.iter() {
-        let name = format!("add/files/{}.json", name);
-        let path = Path::new(&name);
+        let name_2 = format!("add/files/{}.json", name);
+        println!("\t\t{name_2}");
+
+        let path = Path::new(&name_2);
         if path.exists() {
             let mut temporary_vector: Vec<StacksTransaction> = {
                 File::open(path)
                     .map_err(Into::<MyError>::into)
                     .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
                     .unwrap_or_else(|err| {
-                        log::warn!("failed to load transactions: {err}\nFile will be recreated");
+                        log::warn!("failed to load transactions: {err}\nFile '{name_2}' will be recreated");
                         vec![]
                     })
             };
@@ -86,7 +88,7 @@ pub fn separate_files(transactions: &[StacksTransaction], smart_contract: SmartC
                 let sc = SmartContract {
                     name_of_smart_contract: smart_contract.name_of_smart_contract.clone(),
                     tx_info_tx: tx.clone(),
-                    filename: name.clone(),
+                    filename: name_2.clone(),
                 };
                 sc.append_data().unwrap();
             }
