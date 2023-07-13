@@ -165,8 +165,8 @@ impl SmartContract {
         let mut contract_name = "";
         for part in parts {
             if part.contains("ContractName") {
-                let start = part.find("\"").unwrap() + 1;
-                let end = part.rfind("\"").unwrap();
+                let start = part.find('"').unwrap() + 1;
+                let end = part.rfind('"').unwrap();
                 contract_name = &part[start..end];
                 break;
             }
@@ -175,24 +175,20 @@ impl SmartContract {
         contract_name.to_string()
     }
 
-    fn create_file(&self) -> Result<(), MyError> {
-        let file = File::create(&self.filename)?;
-
-        serde_json::to_writer_pretty(file, &self.tx_info_tx)?;
-
-        Ok(())
-    }
+    // fn create_file(&self) -> Result<(), MyError> {
+    //     let file = File::create(&self.filename)?;
+    //     serde_json::to_writer_pretty(file, &self.tx_info_tx)?;
+    //     Ok(())
+    // }
 
     fn append_data(&self) -> Result<(), MyError> {
         let file = OpenOptions::new().append(true).open(&self.filename)?;
-
         serde_json::to_writer_pretty(file, &self.tx_info_tx)?;
-
         Ok(())
     }
 }
 
-fn separate_files(transactions: &Vec<StacksTransaction>, smart_contract: SmartContract) {
+fn separate_files(transactions: &[StacksTransaction], smart_contract: SmartContract) {
     let mut named_transactions: Vec<(String, Vec<StacksTransaction>)> = vec![];
 
     for tx in transactions.iter() {
