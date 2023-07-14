@@ -4,7 +4,10 @@ use std::{
     path::Path,
 };
 
-use blockstack_lib::{chainstate::stacks::StacksTransaction, core::mempool::MemPoolTxInfo};
+use blockstack_lib::{
+    chainstate::stacks::StacksTransaction, 
+    core::mempool::MemPoolTxInfo
+};
 use rusqlite::Result;
 
 use crate::error_handler::MyError;
@@ -51,14 +54,14 @@ pub fn separate_files(transactions: &[StacksTransaction], smart_contract: SmartC
 
     for tx in transactions.iter() {
         let name = smart_contract.contract_name();
-        
+
         #[allow(unused_assignments)]
         let mut name_2 = String::new();
 
         if name.is_empty() {
-            name_2 = "add/files/NO_NAME.json".to_string()
+            name_2 = "add/NO_NAME.json".to_string()
         } else {
-            name_2 = format!("add/files/{}.json", name);
+            name_2 = format!("add/{}.json", name);
         }
 
         println!("\t\t{name_2}");

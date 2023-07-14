@@ -92,7 +92,7 @@ fn main() -> Result<(), MyError> {
         while let Some(row) = rows.next()? {
             let tx_info = MemPoolTxInfo::from_row(row)?;
 
-            let filename = format!("add/files/{}.json", part_of_file_name);
+            let filename = format!("add/{}.json", part_of_file_name);
 
             let smart_contract = SmartContract {
                 name_of_smart_contract: tx_info.clone(),
@@ -101,7 +101,6 @@ fn main() -> Result<(), MyError> {
             };
 
             part_of_file_name = SmartContract::contract_name(&smart_contract);
-            // println!("\tFILE NAME:\t{part_of_file_name:?}");
 
             if tx_info.metadata.accept_time > last_accept_time {
                 last_accept_time = tx_info.metadata.accept_time;
