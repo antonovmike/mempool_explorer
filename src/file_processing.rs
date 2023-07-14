@@ -64,7 +64,7 @@ pub fn separate_files(transactions: &[StacksTransaction], smart_contract: SmartC
             name_2 = format!("add/{}.json", name);
         }
 
-        println!("\t\t{name_2}");
+        // println!("\t\t{name_2}");
 
         if let Some((_, ref mut txs)) = named_transactions.iter_mut().find(|(n, _)| n == &name_2) {
             txs.push(tx.clone());
