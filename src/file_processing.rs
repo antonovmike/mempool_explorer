@@ -64,8 +64,6 @@ pub fn separate_files(transactions: &[StacksTransaction], smart_contract: SmartC
             name_2 = format!("add/{}.json", name);
         }
 
-        // println!("\t\t{name_2}");
-
         if let Some((_, ref mut txs)) = named_transactions.iter_mut().find(|(n, _)| n == &name_2) {
             txs.push(tx.clone());
         } else {
@@ -80,10 +78,10 @@ pub fn separate_files(transactions: &[StacksTransaction], smart_contract: SmartC
                 File::open(path)
                     .map_err(Into::<MyError>::into)
                     .and_then(|file| serde_json::from_reader(file).map_err(Into::into))
-                    .unwrap_or_else(|err| {
-                        log::warn!(
-                            "failed to load transactions: {err}\nFile '{name}' will be recreated"
-                        );
+                    .unwrap_or_else(|_err| {
+                        // log::warn!(
+                        //     "failed to load transactions: {err}\nFile '{name}' will be recreated"
+                        // );
                         vec![]
                     })
             };
